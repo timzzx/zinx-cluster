@@ -26,7 +26,7 @@ func (m *ClientInterceptor) Intercept(chain ziface.IChain) ziface.IcResp {
 		iRequest.Abort()
 		return chain.Proceed(chain.Request()) //进入并执行下一个拦截器
 	}
-	if deData.NodeGroup != "" || deData.NodeID != 0 {
+	if deData.Type == 1 {
 		// 内部消息转发
 		// 获取连接
 		client := Client(deData.NodeGroup, deData.NodeID)

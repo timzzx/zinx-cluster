@@ -24,8 +24,29 @@ func (m *NodeInterceptor) Intercept(chain ziface.IChain) ziface.IcResp {
 
 	// 保存用户coon
 	dmanager.MemberConnManager.Add(iRequest.GetConnection())
+
+	deData, err := dmessage.Decode(iRequest.GetData())
+	if err == nil { // 解包成功
+		if deData.Type == 2 {
+			//发送给玩家
+			c, err := dmanager.MemberConnManager.Get(deData.ConnID)
+			if err != nil {
+				fmt.Println("玩家链接获取失败：", err.Error())
+				iRequest.Abort()
+			}
+			err = c.SendMsg(iRequest.GetMsgID(), deData.Data)
+
+			if err != nil {
+				fmt.Println("发送数据错误")
+				iRequest.Abort()
+			}
+			return chain.Proceed(chain.Request()) //进入并执行下一个拦截器
+		}
+		return chain.Proceed(chain.Request()) //进入并执行下一个拦截器
+	}
+
 	// 消息封包
-	data, err := dmessage.Encode(iRequest.GetConnection().GetConnID(), 0, "", iRequest.GetData())
+	data, err := dmessage.Encode(iRequest.GetConnection().GetConnID(), 0, "", 1, iRequest.GetData())
 	// 消息转发
 	d := dconf.Dicts.GetRouteDicts()
 	if r, ok := d[iRequest.GetMsgID()]; ok {

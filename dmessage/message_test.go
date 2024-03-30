@@ -7,14 +7,14 @@ import (
 )
 
 func TestEncode(t *testing.T) {
-	_, err := Encode(1, 1, "gate", []byte("test"))
+	_, err := Encode(1, 1, "gate", 1, []byte("test"))
 	if err != nil {
 		t.Error("解析错误:" + err.Error())
 	}
 }
 
 func TestDecode(t *testing.T) {
-	data, err := Encode(1, 1, "gate", []byte("test"))
+	data, err := Encode(1, 1, "gate", 2, []byte("test"))
 	if err != nil {
 		t.Error("解析错误:" + err.Error())
 		return

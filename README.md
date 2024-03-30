@@ -383,14 +383,16 @@ type NodeMessage struct {
 	ConnID    uint64 // 链接ID
 	NodeID    int    // nodeID
 	NodeGroup string // Node组
+	Type      int    // 1. 内部消息 2.发送给用户
 	Data      []byte // 客户端消息data
 }
 
-func Encode(connID uint64, nodeID int, nodeGroup string, data []byte) ([]byte, error) {
+func Encode(connID uint64, nodeID int, nodeGroup string, types int, data []byte) ([]byte, error) {
 	m := NodeMessage{
 		ConnID:    connID,
 		NodeID:    nodeID,
 		NodeGroup: nodeGroup,
+		Type:      types,
 		Data:      data,
 	}
 	var buf bytes.Buffer
@@ -408,6 +410,7 @@ func Decode(data []byte) (*NodeMessage, error) {
 	return m, err
 }
 
+
 ```
 消息内部消息封包和解包使用的"encoding/gob"
 > 测试message
@@ -423,14 +426,14 @@ import (
 )
 
 func TestEncode(t *testing.T) {
-	_, err := Encode(1, 1, "gate", []byte("test"))
+	_, err := Encode(1, 1, "gate", 1, []byte("test"))
 	if err != nil {
 		t.Error("解析错误:" + err.Error())
 	}
 }
 
 func TestDecode(t *testing.T) {
-	data, err := Encode(1, 1, "gate", []byte("test"))
+	data, err := Encode(1, 1, "gate", 2, []byte("test"))
 	if err != nil {
 		t.Error("解析错误:" + err.Error())
 		return
@@ -706,13 +709,11 @@ import (
 	"github.com/timzzx/zinx-cluster/dmanager"
 	"github.com/timzzx/zinx-cluster/dmessage"
 )
-
 var ClientConnManager *dmanager.ConnManager
 
 func init() {
 	ClientConnManager = dmanager.NewConnManager()
 }
-
 type ClientInterceptor struct {
 }
 
@@ -726,7 +727,7 @@ func (m *ClientInterceptor) Intercept(chain ziface.IChain) ziface.IcResp {
 		iRequest.Abort()
 		return chain.Proceed(chain.Request()) //进入并执行下一个拦截器
 	}
-	if deData.NodeGroup != "" || deData.NodeID != 0 {
+	if deData.Type == 1 {
 		// 内部消息转发
 		// 获取连接
 		client := Client(deData.NodeGroup, deData.NodeID)
@@ -858,8 +859,29 @@ func (m *NodeInterceptor) Intercept(chain ziface.IChain) ziface.IcResp {
 
 	// 保存用户coon
 	dmanager.MemberConnManager.Add(iRequest.GetConnection())
+
+	deData, err := dmessage.Decode(iRequest.GetData())
+	if err == nil { // 解包成功
+		if deData.Type == 2 {
+			//发送给玩家
+			c, err := dmanager.MemberConnManager.Get(deData.ConnID)
+			if err != nil {
+				fmt.Println("玩家链接获取失败：", err.Error())
+				iRequest.Abort()
+			}
+			err = c.SendMsg(iRequest.GetMsgID(), deData.Data)
+
+			if err != nil {
+				fmt.Println("发送数据错误")
+				iRequest.Abort()
+			}
+			return chain.Proceed(chain.Request()) //进入并执行下一个拦截器
+		}
+		return chain.Proceed(chain.Request()) //进入并执行下一个拦截器
+	}
+
 	// 消息封包
-	data, err := dmessage.Encode(iRequest.GetConnection().GetConnID(), 0, "", iRequest.GetData())
+	data, err := dmessage.Encode(iRequest.GetConnection().GetConnID(), 0, "", 1, iRequest.GetData())
 	// 消息转发
 	d := dconf.Dicts.GetRouteDicts()
 	if r, ok := d[iRequest.GetMsgID()]; ok {
@@ -883,6 +905,7 @@ func (m *NodeInterceptor) Intercept(chain ziface.IChain) ziface.IcResp {
 	return chain.Proceed(chain.Request()) //进入并执行下一个拦截器
 }
 
+
 ```
 
 前端Node处理玩家消息和内部Client消息转发功能都好了，但是还需要处理内部client收到发送给用户的消息
@@ -893,16 +916,16 @@ dclient/client.go
 
 ```go
 // 增加下面的else部分
-if deData.NodeGroup != "" || deData.NodeID != 0 {
-    // 内部消息转发
-    // 获取连接
-    client := Client(deData.NodeGroup, deData.NodeID)
-    err = client.SendMsg(iRequest.GetMsgID(), iRequest.GetData())
-    if err != nil {
-        fmt.Println("发送数据错误")
-        iRequest.Abort()
-    }
-} else { 
+if deData.Type == 1 {
+		// 内部消息转发
+		// 获取连接
+		client := Client(deData.NodeGroup, deData.NodeID)
+		err = client.SendMsg(iRequest.GetMsgID(), iRequest.GetData())
+		if err != nil {
+			fmt.Println("发送数据错误")
+			iRequest.Abort()
+		}
+} else {
     //发送给玩家
     c, err := dmanager.MemberConnManager.Get(deData.ConnID)
     if err != nil {

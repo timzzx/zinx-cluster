@@ -10,14 +10,16 @@ type NodeMessage struct {
 	ConnID    uint64 // 链接ID
 	NodeID    int    // nodeID
 	NodeGroup string // Node组
+	Type      int    // 1. 内部消息 2.发送给用户
 	Data      []byte // 客户端消息data
 }
 
-func Encode(connID uint64, nodeID int, nodeGroup string, data []byte) ([]byte, error) {
+func Encode(connID uint64, nodeID int, nodeGroup string, types int, data []byte) ([]byte, error) {
 	m := NodeMessage{
 		ConnID:    connID,
 		NodeID:    nodeID,
 		NodeGroup: nodeGroup,
+		Type:      types,
 		Data:      data,
 	}
 	var buf bytes.Buffer
