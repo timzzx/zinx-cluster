@@ -1,0 +1,9 @@
+{
+    "gate": [
+        {"ID": 1, "Name": "gate-1", "Type": 1, "IP": "0.0.0.0", "Port": 10000, "IsPass": 1}
+    ],
+    "im": [
+        {"ID": 2, "Name": "im-1", "Type": 2, "IP": "0.0.0.0", "Port": 20000, "IsPass": 1},
+        {"ID": 3, "Name": "im-2", "Type": 2, "IP": "0.0.0.0", "Port": 21000, "IsPass": 1}
+    ]
+}
