@@ -74,13 +74,13 @@ func Client(group ddict.GroupName, NodeId int) ziface.IConnection {
 	}
 	// 启动client
 	connChannl := make(chan ziface.IConnection, 1)
-	go clientSatrt(c.IP, c.Port, connChannl)
+	go clientSatrt(c.IP, c.Port, connChannl, c.ID)
 	dmanager.ClientConnManager.Add(c.ID, <-connChannl)
 	conn, _ = dmanager.ClientConnManager.Get(c.ID)
 	return conn
 }
 
-func clientSatrt(ip string, port int, connChannl chan ziface.IConnection) ziface.IConnection {
+func clientSatrt(ip string, port int, connChannl chan ziface.IConnection, nodeId int) ziface.IConnection {
 	// 启动client
 	client := znet.NewClient(ip, port)
 	client.SetOnConnStart(func(i ziface.IConnection) {
@@ -90,6 +90,11 @@ func clientSatrt(ip string, port int, connChannl chan ziface.IConnection) ziface
 	client.AddInterceptor(&zdecoder.TLVDecoder{})
 	client.AddInterceptor(&ClientInterceptor{})
 	client.SetDecoder(nil)
+	// 删除失效链接
+	client.SetOnConnStop(func(conn ziface.IConnection) {
+		fmt.Println("内部客户端删除链接")
+		dmanager.ClientConnManager.Remove(nodeId)
+	})
 	client.Start()
 	select {}
 }

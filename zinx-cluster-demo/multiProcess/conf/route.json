@@ -1,0 +1,10 @@
+{
+    "gate": [
+        {"MsgID":1,"Name":"登录"},
+        {"MsgID":2,"Name":"退出"}
+    ],
+    "im": [
+        {"MsgID":3, "Name": "单送"},
+        {"MsgID":4,"Name":"群发"}
+    ]
+}

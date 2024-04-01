@@ -5,7 +5,7 @@ import (
 	"github.com/aceld/zinx/ziface"
 	"github.com/aceld/zinx/znet"
 	"github.com/timzzx/zinx-cluster/ddict"
-	"github.com/timzzx/zinx-cluster/demo/im/handlers"
+	"github.com/timzzx/zinx-cluster/zinx-cluster-demo/singleProcess/im/handlers"
 )
 
 func App(n *ddict.NodeInfo, groupName ddict.GroupName) ziface.IServer {

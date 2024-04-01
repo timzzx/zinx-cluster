@@ -16,7 +16,14 @@ type NodeInfo struct {
 	IP   string // IP
 	Port int    // 端口号
 }
-
+type NodeDict struct {
+	ID        int    // node id
+	Name      string // node 名称
+	Type      int    // node类型 1.gateway 2.backend
+	IP        string // IP
+	Port      int    // 端口号
+	GroupName GroupName
+}
 type NodeSlice = []*NodeInfo
 
 type RouteSlice = []*RouteInfo
@@ -25,6 +32,7 @@ type GroupName = string
 
 // node集合
 type NodeGroupMap = map[GroupName]NodeSlice
+type NodeDicts = map[int]*NodeDict
 
 // route集合
 type RouteGroupMap = map[GroupName]RouteSlice
@@ -112,6 +120,25 @@ func (d *Dict) GetRouteDicts() RouteDicts {
 				Name:      v.Name,
 				GroupName: groupName,
 			}
+		}
+	}
+	return r
+}
+
+// node字典
+func (d *Dict) GetNodeDicts() NodeDicts {
+	r := make(NodeDicts)
+	for groupName, group := range d.NodeGroup {
+		for _, v := range group {
+			r[v.ID] = &NodeDict{
+				ID:        v.ID,
+				Name:      v.Name,
+				Type:      v.Type,
+				IP:        v.IP,
+				Port:      v.Port,
+				GroupName: groupName,
+			}
+
 		}
 	}
 	return r
